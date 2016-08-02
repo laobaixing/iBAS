@@ -39,8 +39,6 @@ class MainFrame(wx.Frame):
         
         menuPretreat = wx.Menu()
         menuPretreat.Append(21, "&Batch effects", "Examine batch effects with PCA")
-#        menuPretreat.Append(22, "&Check void data")
-#         menuPretreat.Append(23, "&Check data range")  # include above two in summary
         menuPretreat.Append(24, "&Summary")   
         menuPretreat.Append(25, "&Log Transformation")
         
