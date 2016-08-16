@@ -246,7 +246,7 @@ class InputXYDialog ( wx.Dialog ):
 
 class DialogFDR ( wx.Dialog ):
     
-    def __init__( self, title ):
+    def __init__( self, title, methods):
         # wx.Dialog.__init__ ( self, None, id = wx.ID_ANY, title = u"Input for Scatter Plot", pos = wx.DefaultPosition, size = wx.Size(606,375 ), style = wx.DEFAULT_DIALOG_STYLE )
         wx.Dialog.__init__(self, None, -1, title= title, size=(450, 250))
         
@@ -254,7 +254,7 @@ class DialogFDR ( wx.Dialog ):
         
         bSizer1 = wx.BoxSizer( wx.VERTICAL )
         
-        self.m_staticText1 = wx.StaticText( self, wx.ID_ANY, u"Please input row/column and the number/name", wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText1 = wx.StaticText( self, wx.ID_ANY, u"Please input row/column and the number", wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_staticText1.Wrap( -1 )
         bSizer1.Add( self.m_staticText1, 0, wx.ALL, 5 )
         
@@ -287,7 +287,7 @@ class DialogFDR ( wx.Dialog ):
         self.m_staticText5.Wrap( -1 )
         gSizer3.Add( self.m_staticText5, 0, wx.ALL, 5 )
         
-        m_choice2Choices = [ u"Pearson", u"Spearman" ]
+        m_choice2Choices = methods
         self.m_choice2 = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice2Choices, 0 )
         self.m_choice2.SetSelection( 0 )
         gSizer3.Add( self.m_choice2, 0, wx.ALL, 5 )      

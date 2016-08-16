@@ -8,6 +8,7 @@ import pandas as pd
 from scipy import stats
 from iFun import *
 from iRpy import *
+from iBAS_Lasso import iBAS_Lasso
 from iBAStable import *
 from iBASdialog import *
 from iBASfigure import FigurePanel
@@ -16,6 +17,7 @@ from iBASoutput import OutFrame
 
 class MainFrame(wx.Frame):
     def __init__(self):
+        # you can use super(MainFrame, self)._init_(...)
         wx.Frame.__init__(self, None, -1, title= "(iBAS) interactive Bioinformatics Analysis System" ,size=(1200, 600))
         
         self.data = []
@@ -39,6 +41,8 @@ class MainFrame(wx.Frame):
         
         menuPretreat = wx.Menu()
         menuPretreat.Append(21, "&Batch effects", "Examine batch effects with PCA")
+#        menuPretreat.Append(22, "&Check void data")
+#         menuPretreat.Append(23, "&Check data range")  # include above two in summary
         menuPretreat.Append(24, "&Summary")   
         menuPretreat.Append(25, "&Log Transformation")
         
@@ -56,8 +60,9 @@ class MainFrame(wx.Frame):
         menuML.Append(41, "&Naive Bayes")    
         menuML.Append(42, "&Hierarchical Model")     
         menuML.Append(43, "&SVM")                            
-        menuML.Append(44, "&Lasso and Elastic net")            
-        menuML.Append(45, "&Coxnet")   
+        menuML.Append(44, "&Lasso")   
+        menuML.Append(45, "&Elastic net")           
+        menuML.Append(46, "&Coxnet")   
         
         # Bioinformatics menu include method to treat high dimension data, the method may come from statistics or machine learning    
         menuBioinfo = wx.Menu()
@@ -92,7 +97,9 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnANOVA, id=34)
         self.Bind(wx.EVT_MENU, self.OnCox, id=38)
         self.Bind(wx.EVT_MENU, self.OnPCA, id=21)
-        self.Bind(wx.EVT_MENU, self.OnCoxnet, id=45)
+        self.Bind(wx.EVT_MENU, self.OnLasso, id=44)
+        self.Bind(wx.EVT_MENU, self.OnElasticNet, id=45)
+        self.Bind(wx.EVT_MENU, self.OnCoxnet, id=46)
         self.Bind(wx.EVT_MENU, self.OnHeatmap, id=51)
         self.Bind(wx.EVT_MENU, self.OnFDR_ttest, id=54)
         self.Bind(wx.EVT_MENU, self.OnFDR_Cox, id=55)
@@ -250,10 +257,35 @@ class MainFrame(wx.Frame):
         
         data = self.notebook.data[number]
         summary = coxphPy(data, vars)
-        pvalue = summary.rx2("logtest")[2]
+        pvalue = summary.rx2("logtest")[2]  # it is better to move to coxphPy, or set another function
         output = "p-value of cox survival analysis is "  + str(pvalue)     
         wx.MessageBox(output, "Cox survival analysis result", wx.CENTER, self)
-    
+        
+    def OnLasso(self, event):
+        # get input from GUI
+        number = self.notebook.GetCurrentDataId()
+        fdrDlg = DialogFDR(title=u"Input for Lasso analysis", methods = [u"Lasso"])
+        direction, dependentVar, excludeVars, method = fdrDlg.GetValue()
+        data = self.notebook.data[number]
+        independentVars = numpy.delete(range(len(data[0])), [dependentVar]+ excludeVars)   
+        # method = pars[3]      
+        
+        # calculate        
+        model = iBAS_Lasso(n_jobs=4)
+        lassoSelectedFeatures = model.getCoefsFromList(data, dependentVar, independentVars)
+        lassoSelectedFeatures = [("Variables", "Coefficients") ] + lassoSelectedFeatures 
+        
+        # output
+        output = OutFrame("notebook", lassoSelectedFeatures, "Lasso")
+        output.Show()
+         
+        
+    def OnElasticNet(self, event):
+        number = self.notebook.GetCurrentDataId()
+        fdrDlg = DialogFDR(title=u"Input for Elastic net analysis")
+        pars = fdrDlg.GetValue()
+        method = pars[3]           
+        
     def OnCoxnet(self, event):
         number = self.notebook.GetCurrentDataId()
         coxnetDlg = DialogCox(title=u"Input for cox-lasso survival analysis")
@@ -374,7 +406,7 @@ class MainFrame(wx.Frame):
     def OnFDR_ttest(self, event):
         # get the active dataset
         number = self.notebook.GetCurrentDataId()
-        fdrDlg = DialogFDR(title=u"Input for FDR analysis")
+        fdrDlg = DialogFDR(title=u"Input for FDR analysis", methods = [ u"Pearson", u"Spearman" ])
         pars = fdrDlg.GetValue()
         method = pars[3]
 
@@ -406,7 +438,7 @@ class MainFrame(wx.Frame):
             vars = [survTime, censor, factors[i]]
             # print data[0][factors[i]]
             summary = coxphPy(data, vars)
-            pvalue = summary.rx2("logtest")[2]
+            pvalue = summary.rx2("logtest")[2]  # move to iRpy or as function
             # print pvalue
             res[i, 0] = factors[i]
             res[i, 1] = pvalue      
